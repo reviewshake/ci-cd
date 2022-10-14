@@ -1,8 +1,9 @@
-# github-actions
+# ci-cd
 
-Reusable (Composite) Github Actions for CI pipelines
+Reusable (Composite) Github Actions for Shake CI/CD pipelines
 
-See [this info](https://damienaicheh.github.io/github/actions/2021/10/07/reuse-workflows-composite-action-en.html)
+File name should be action.yml or action.yaml
 
-File names should be action.yml or action.yaml
+For details see [this info](https://docs.github.com/en/actions/creating-actions/creating-a-composite-action)
+
 
