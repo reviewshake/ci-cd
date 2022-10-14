@@ -10,15 +10,22 @@ runs:
   steps:
     # Set the $RELEASE variable to be major, minor or patch
     - name: Set patch release
+      shell: bash
       if: ${{ contains(github.event.*.labels.*.name, 'release-patch') }}
       run: echo "RELEASE=patch" >> $GITHUB_ENV
+
     - name: Set minor release
+      shell: bash
       if: ${{ contains(github.event.*.labels.*.name, 'release-minor') }}
       run: echo "RELEASE=minor" >> $GITHUB_ENV
+
     - name: Set major release
+      shell: bash
       if: ${{ contains(github.event.*.labels.*.name, 'release-major') }}
       run: echo "RELEASE=major" >> $GITHUB_ENV
+
     - name: Check if we need to use default
+      shell: bash
       run: |
         if [[ -z "${{ env.RELEASE }}" ]];
         then
@@ -45,12 +52,14 @@ runs:
         fallback: 1.0.0 # Optional fallback tag to use when no tag can be found
 
     - name: Install semver tool
+      shell: bash
       run: |
          wget -O /usr/local/bin/semver \
              https://raw.githubusercontent.com/fsaintjacques/semver-tool/master/src/semver
          chmod +x /usr/local/bin/semver
 
     - name: Calculate next version
+      shell: bash
       id: newtag
       env:
         CURRENT_VERSION: ${{ steps.previoustag.outputs.tag }}
@@ -61,10 +70,12 @@ runs:
         echo ::set-output name=new_version::"v$NEW_VERSION"
 
     - name: Get current date
+      shell: bash
       id: date
       run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
 
     - name: Update changelog
+      shell: bash
       id: update-changelog
       env:
         NEW_VERSION: "${{ steps.newtag.outputs.new_version }}"
@@ -99,6 +110,7 @@ runs:
 
     # Create a new GitHub Release
     - name: Create new GitHub release
+      shell: bash
       id: create_release
       uses: actions/create-release@v1
       env:
@@ -122,6 +134,7 @@ runs:
 
     # Build Docker Image
     - name: Build Docker Image
+      shell: bash
       env:
         NEW_VERSION: ${{ steps.newtag.outputs.new_version }}
       run: |
@@ -151,11 +164,13 @@ runs:
         fetch-depth: 0 # Required due to the way Git works, without it this action won't be able to find any or the correct tags
 
     - name: Install yq
+      shell: bash
       run: |
         sudo wget -O /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.9.3/yq_linux_amd64
         sudo chmod +x /usr/local/bin/yq
 
     - name: Change tag and push changes
+      shell: bash
       env:
         NEW_VERSION: ${{ steps.previoustag.outputs.tag }}
       run: |
