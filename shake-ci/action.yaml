@@ -1,0 +1,165 @@
+name: "Shake CI"
+description: "The Shake CI builds a Docker image running scanning, updates the CHANGELOG.md file and creates a semver version"
+inputs:
+  docker-repository:
+    description: 'Docker Repository where we will store the image'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    # Set the $RELEASE variable to be major, minor or patch
+    - name: Set patch release
+      if: ${{ contains(github.event.*.labels.*.name, 'release-patch') }}
+      run: echo "RELEASE=patch" >> $GITHUB_ENV
+    - name: Set minor release
+      if: ${{ contains(github.event.*.labels.*.name, 'release-minor') }}
+      run: echo "RELEASE=minor" >> $GITHUB_ENV
+    - name: Set major release
+      if: ${{ contains(github.event.*.labels.*.name, 'release-major') }}
+      run: echo "RELEASE=major" >> $GITHUB_ENV
+    - name: Check if we need to use default
+      run: |
+        if [[ -z "${{ env.RELEASE }}" ]];
+        then
+          echo "No labels were added to the PR, setting 'patch' version by default"
+          echo "RELEASE=patch" >> $GITHUB_ENV
+        fi
+
+    # We checkout the repo using the PAT of the user that can skip the main branch protection rule. 
+    # We persist these credentials so they are available in the next steps to make a commit against main branch directly.
+    - uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        persist-credentials: true
+        fetch-depth: 0 # Required due to the way Git works, without it this action won't be able to find any or the correct tags
+
+    # Please run this action after the actions/checkout action
+    - name: Check for plain credentials
+      uses: ShiftLeftSecurity/scan-action@master
+
+    - name: 'Get Previous tag'
+      id: previoustag
+      uses: "WyriHaximus/github-action-get-previous-tag@v1"
+      with:
+        fallback: 1.0.0 # Optional fallback tag to use when no tag can be found
+
+    - name: Install semver tool
+      run: |
+         wget -O /usr/local/bin/semver \
+             https://raw.githubusercontent.com/fsaintjacques/semver-tool/master/src/semver
+         chmod +x /usr/local/bin/semver
+
+    - name: Calculate next version
+      id: newtag
+      env:
+        CURRENT_VERSION: ${{ steps.previoustag.outputs.tag }}
+      run: |
+        echo "Current version is $CURRENT_VERSION"
+        export NEW_VERSION=$(semver bump $RELEASE $CURRENT_VERSION)
+        echo "New version is $NEW_VERSION"
+        echo ::set-output name=new_version::"v$NEW_VERSION"
+
+    - name: Get current date
+      id: date
+      run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+
+    - name: Update changelog
+      id: update-changelog
+      env:
+        NEW_VERSION: "${{ steps.newtag.outputs.new_version }}"
+        VERSION_DATE: "${{ steps.date.outputs.date }}"
+      run: |
+        cd $GITHUB_WORKSPACE
+        # Please select an user excluded in the branch protection rule
+        git config user.name shake-robot
+        git config user.email dev@shake.io
+        git fetch
+        CURRENT_BRANCH=$(git branch --show-current)
+        git pull origin $CURRENT_BRANCH
+        # The Pull Request body was populated with the content of pull_request_template.md (and edited)
+        # Only extract the text below the line containing the word CHANGELOG
+        echo "${{ github.event.pull_request.body }}" > pull-request-body.txt
+        CHANGELOG_LINE_NUMBER=$(grep -n "## CHANGELOG" pull-request-body.txt | cut -d ":" -f 1 | head -n 1 | tr -d "\n")
+        if [ "$CHANGELOG_LINE_NUMBER" == "" ]; then
+            echo "ERROR: No word CHANGELOG was found in PR body"
+            exit 1
+        fi
+        FIRST_LINE_NUMBER=$((CHANGELOG_LINE_NUMBER+1))
+        CHANGELOG_BODY=`tail --lines=+${FIRST_LINE_NUMBER} pull-request-body.txt`
+        # Latest version should be injected on top of CHANGELOG (after header)
+        cat CHANGELOG.md | head -n 7 > CHANGELOG.new
+        echo "## [$NEW_VERSION] - $VERSION_DATE" >> CHANGELOG.new
+        echo "$CHANGELOG_BODY" >> CHANGELOG.new
+        tail --lines=+8 CHANGELOG.md >> CHANGELOG.new
+        mv CHANGELOG.new CHANGELOG.md
+        git add CHANGELOG.md
+        git commit -m "Updating CHANGELOG.md for $NEW_VERSION"
+        git push
+
+    # Create a new GitHub Release
+    - name: Create new GitHub release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        # This token is provided by Actions, you don't need to create a new secret
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.newtag.outputs.new_version }}
+        release_name: "Release ${{ steps.newtag.outputs.new_version }}"
+        body: |
+          See CHANGELOG.md file for details
+        draft: false
+        prerelease: false
+
+    # Docker Login
+    - name: Docker Login
+      uses: docker/login-action@v1.8.0
+      with:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+        logout: false
+
+    # Build Docker Image
+    - name: Build Docker Image
+      env:
+        NEW_VERSION: ${{ steps.newtag.outputs.new_version }}
+      run: |
+        echo "docker build -t ${{ inputs.docker-repository }}:$NEW_VERSION ."
+        echo "docker push ${{ inputs.docker-repository }}:$NEW_VERSION"
+
+    # Get current version on local repo before checking out k8s-manifests repo
+    - uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        persist-credentials: true
+        fetch-depth: 0 # Required due to the way Git works, without it this action won't be able to find any or the correct tags
+
+    - name: 'Get Previous tag'
+      id: previoustag
+      uses: "WyriHaximus/github-action-get-previous-tag@v1"
+
+    # We checkout the repo using the PAT of the user that can skip the main branch protection rule. 
+    # We persist these credentials so they are available in the next steps to make a commit against main branch directly.
+    - uses: actions/checkout@v3
+      with:
+        repository: reviewshake/k8s-manifests
+        ssh-key: ${{ secrets.REPO_K8S_MANIFESTS_SSHKEY }}
+        ref: "main"
+        token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        persist-credentials: true
+        fetch-depth: 0 # Required due to the way Git works, without it this action won't be able to find any or the correct tags
+
+    - name: Install yq
+      run: |
+        sudo wget -O /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.9.3/yq_linux_amd64
+        sudo chmod +x /usr/local/bin/yq
+
+    - name: Change tag and push changes
+      env:
+        NEW_VERSION: ${{ steps.previoustag.outputs.tag }}
+      run: |
+        git config user.name shake-robot
+        git config user.email dev@shake.io
+        ls -l
+        echo "TO-DO: Apply a commit bumping version to $NEW_VERSION"
