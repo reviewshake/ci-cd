@@ -4,6 +4,18 @@ inputs:
   docker-repository:
     description: 'Docker Repository where we will store the image'
     required: true
+  github-token:
+    description: 'GitHub Token with repo scope (to checkout the ci-cd repo)'
+    required: true
+  docker-username:
+    description: 'Docker Registry Username'
+    required: true
+  docker-password:
+    description: 'Docker Registry Password'
+    required: true
+  argocd-repo-ssh-key:
+    description: 'SSH Private Key allowed to clone the ArgoCD repo (k8s-manifests)'
+    required: true
 
 runs:
   using: "composite"
@@ -37,7 +49,7 @@ runs:
     # We persist these credentials so they are available in the next steps to make a commit against main branch directly.
     - uses: actions/checkout@v3
       with:
-        token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        token: ${{ inputs.github-token }}
         persist-credentials: true
         fetch-depth: 0 # Required due to the way Git works, without it this action won't be able to find any or the correct tags
 
@@ -114,8 +126,7 @@ runs:
       id: create_release
       uses: actions/create-release@v1
       env:
-        # This token is provided by Actions, you don't need to create a new secret
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
       with:
         tag_name: ${{ steps.newtag.outputs.new_version }}
         release_name: "Release ${{ steps.newtag.outputs.new_version }}"
@@ -128,8 +139,8 @@ runs:
     - name: Docker Login
       uses: docker/login-action@v1.8.0
       with:
-        username: ${{ secrets.DOCKER_HUB_USERNAME }}
-        password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+        username: ${{ inputs.docker-username }}
+        password: ${{ inputs.docker-password }}
         logout: false
 
     # Build Docker Image
@@ -144,7 +155,7 @@ runs:
     # Get current version on local repo before checking out k8s-manifests repo
     - uses: actions/checkout@v3
       with:
-        token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        token: ${{ inputs.github-token }}
         persist-credentials: true
         fetch-depth: 0 # Required due to the way Git works, without it this action won't be able to find any or the correct tags
 
@@ -157,9 +168,9 @@ runs:
     - uses: actions/checkout@v3
       with:
         repository: reviewshake/k8s-manifests
-        ssh-key: ${{ secrets.REPO_K8S_MANIFESTS_SSHKEY }}
+        ssh-key: ${{ inputs.argocd-repo-ssh-key }}
         ref: "main"
-        token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        token: ${{ inputs.github-token }}
         persist-credentials: true
         fetch-depth: 0 # Required due to the way Git works, without it this action won't be able to find any or the correct tags
 
