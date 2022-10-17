@@ -122,7 +122,6 @@ runs:
 
     # Create a new GitHub Release
     - name: Create new GitHub release
-      shell: bash
       id: create_release
       uses: actions/create-release@v1
       env:
