@@ -149,8 +149,8 @@ runs:
       env:
         NEW_VERSION: ${{ steps.newtag.outputs.new_version }}
       run: |
-        echo "docker build -t ${{ inputs.docker-repository }}:$NEW_VERSION ."
-        echo "docker push ${{ inputs.docker-repository }}:$NEW_VERSION"
+        docker build -t ${{ inputs.docker-repository }}:$NEW_VERSION .
+        docker push ${{ inputs.docker-repository }}:$NEW_VERSION
 
     # Get current version on local repo before checking out k8s-manifests repo
     - uses: actions/checkout@v3
