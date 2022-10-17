@@ -158,10 +158,6 @@ runs:
         persist-credentials: true
         fetch-depth: 0 # Required due to the way Git works, without it this action won't be able to find any or the correct tags
 
-    - name: 'Get Previous tag'
-      id: previoustag
-      uses: "WyriHaximus/github-action-get-previous-tag@v1"
-
     # We checkout the repo using the PAT of the user that can skip the main branch protection rule. 
     # We persist these credentials so they are available in the next steps to make a commit against main branch directly.
     - uses: actions/checkout@v3
@@ -182,7 +178,7 @@ runs:
     - name: Change tag and push changes
       shell: bash
       env:
-        NEW_VERSION: ${{ steps.previoustag.outputs.tag }}
+        NEW_VERSION: ${{ steps.latest-tag.outputs.tag }}
       run: |
         git config user.name shake-robot
         git config user.email dev@shake.io
