@@ -69,13 +69,14 @@ runs:
           echo "RELEASE=patch" >> $GITHUB_ENV
         fi
 
-    # We checkout the repo using the PAT of the user that can skip the main branch protection rule. 
+    # We checkout this repo using the PAT of the user that can skip the main branch protection rule. 
     # We persist these credentials so they are available in the next steps to make a commit against main branch directly.
     - uses: actions/checkout@v3
       with:
         token: ${{ inputs.github-token }}
         persist-credentials: true
         fetch-depth: 0 # Required due to the way Git works, without it this action won't be able to find any or the correct tags
+        path: ./source-repo/
 
     # Please run this action after the actions/checkout action
     - name: Check for plain credentials
@@ -204,6 +205,7 @@ runs:
         token: ${{ inputs.github-token }}
         persist-credentials: true
         fetch-depth: 0 # Required due to the way Git works, without it this action won't be able to find any or the correct tags
+        path: ./k8s-manifests/
 
     - name: Install yq
       shell: bash
@@ -225,3 +227,11 @@ runs:
         git add ${{ inputs.argocd-values-file }}
         git commit -m "Upgrading ${{ inputs.app-name }} ${{ inputs.app-env }} to $NEW_VERSION"
         git push
+
+    # This step is a workaround to avoid the following error in the "Post Run CI/CD Composite Action" step in the client repo's build:
+    # "Can't find 'action.yml', 'action.yaml' or 'Dockerfile' under '/home/runner/work/ci-cd-test/ci-cd-test/ci-cd'. Did you forget to run actions/checkout before running your local action?"
+    # For details see https://github.com/actions/runner/issues/1300
+    - name: Workaround for cleanup step
+      working-directory: ./source-repo/
+      run: ls .
+      shell: bash
