@@ -22,8 +22,9 @@ inputs:
     description: 'SSH Private Key allowed to clone the ArgoCD repo (k8s-manifests)'
     required: true
   argocd-values-file:
-    description: 'ArgoCD Values File to update'
-    required: true
+    description: 'ArgoCD Values File to update (keep empty to skip the CD part)'
+    required: false
+    default: ''
   dockerfile-name:
     description: 'Dockerfile name'
     required: true
@@ -211,6 +212,7 @@ runs:
         sudo chmod +x /usr/local/bin/yq
 
     - name: Update ArgoCD values file
+      if: ${{ inputs.argocd-values-file }}
       shell: bash
       env:
         NEW_VERSION: "${{ env.new_version }}"
