@@ -44,25 +44,25 @@ runs:
 
   steps:
     - name: Set patch release
-      if: {{ inputs.app-env }} == 'production'
+      if: ${{ inputs.app-env == 'production' }}
       shell: bash
       if: ${{ contains(github.event.*.labels.*.name, 'release-patch') }}
       run: echo "RELEASE=patch" >> $GITHUB_ENV
 
     - name: Set minor release
-      if: {{ inputs.app-env }} == 'production'
+      if: ${{ inputs.app-env == 'production' }}
       shell: bash
       if: ${{ contains(github.event.*.labels.*.name, 'release-minor') }}
       run: echo "RELEASE=minor" >> $GITHUB_ENV
 
     - name: Set major release
-      if: {{ inputs.app-env }} == 'production'
+      if: ${{ inputs.app-env == 'production' }}
       shell: bash
       if: ${{ contains(github.event.*.labels.*.name, 'release-major') }}
       run: echo "RELEASE=major" >> $GITHUB_ENV
 
     - name: Check if we need to use default
-      if: {{ inputs.app-env }} == 'production'
+      if: ${{ inputs.app-env == 'production' }}
       shell: bash
       run: |
         if [[ -z "${{ env.RELEASE }}" ]];
@@ -84,14 +84,14 @@ runs:
       uses: ShiftLeftSecurity/scan-action@master
 
     - name: 'Get Previous tag'
-      if: {{ inputs.app-env }} == 'production'
+      if: ${{ inputs.app-env == 'production' }}
       id: previoustag
       uses: "WyriHaximus/github-action-get-previous-tag@v1"
       with:
         fallback: 1.0.0 # Optional fallback tag to use when no tag can be found
 
     - name: Install semver tool
-      if: {{ inputs.app-env }} == 'production'
+      if: ${{ inputs.app-env == 'production' }}
       shell: bash
       run: |
           wget -O /usr/local/bin/semver \
@@ -102,7 +102,7 @@ runs:
       id: newtag
       shell: bash
       run: |
-        if [ "{{ env.app-environment }}" == "production" ]; then
+        if [ "${{ inputs.app-env }}" == "production" ]; then
           # For production versions, let's generate the next semver version
           CURRENT_VERSION=${{ steps.previoustag.outputs.tag }}
           echo "Current version is $CURRENT_VERSION"
@@ -116,7 +116,7 @@ runs:
         echo "new_version=$NEW_VERSION" >> $GITHUB_ENV
 
     - name: Get current date
-      if: {{ inputs.app-env }} == 'production'
+      if: ${{ inputs.app-env == 'production' }}
       id: date
       shell: bash
       run: |
@@ -124,7 +124,7 @@ runs:
         echo "current_date=$CURRENT_DATE" >> $GITHUB_ENV
 
     - name: Update changelog
-      if: {{ inputs.app-env }} == 'production'
+      if: ${{ inputs.app-env == 'production' }}
       id: update-changelog
       shell: bash
       env:
@@ -160,7 +160,7 @@ runs:
 
     # Create a new GitHub Release
     - name: Create new GitHub release
-      if: {{ inputs.app-env }} == 'production'
+      if: ${{ inputs.app-env == 'production' }}
       id: create_release
       uses: actions/create-release@v1
       env:
