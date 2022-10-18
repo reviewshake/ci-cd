@@ -82,6 +82,7 @@ runs:
     - name: Check for plain credentials
       uses: ShiftLeftSecurity/scan-action@master
       with:
+        src: ./source-repo/
         output: /tmp/reports
 
     - name: 'Get Previous tag'
