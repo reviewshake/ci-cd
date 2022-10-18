@@ -16,6 +16,16 @@ The purpose of this action is to standardize the Shake CI/CD pipelines avoiding 
 * Automatically create a Release with the next semver version based on Pull Requests tags.
 * Scans reporitory to check if there are credentials stored as plain text.
 
+## Client Repo Configuration
+
+Add the following labels to the client repo (the repo that uses this action):
+
+- release-major
+- release-minor
+- release-patch
+
+These labels can be used to tag a Pull Request before merging it into main branch so we can choose how to increase the semantic version
+
 ## PERSONAL_ACCESS_TOKEN repo
 
 This action requires passing a variable named inputs.github-token.
