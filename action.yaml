@@ -44,19 +44,16 @@ runs:
 
   steps:
     - name: Set patch release
-      if: ${{ inputs.app-env == 'production' }}
       shell: bash
       if: ${{ contains(github.event.*.labels.*.name, 'release-patch') }}
       run: echo "RELEASE=patch" >> $GITHUB_ENV
 
     - name: Set minor release
-      if: ${{ inputs.app-env == 'production' }}
       shell: bash
       if: ${{ contains(github.event.*.labels.*.name, 'release-minor') }}
       run: echo "RELEASE=minor" >> $GITHUB_ENV
 
     - name: Set major release
-      if: ${{ inputs.app-env == 'production' }}
       shell: bash
       if: ${{ contains(github.event.*.labels.*.name, 'release-major') }}
       run: echo "RELEASE=major" >> $GITHUB_ENV
