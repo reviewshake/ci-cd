@@ -37,6 +37,8 @@ inputs:
     required: false
     default: ''
 
+# NOTE: Don't use set-output, it's deprecated: https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
+#       Instead we use environment variables: https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#environment-files
 runs:
   using: "composite"
   steps:
@@ -97,20 +99,23 @@ runs:
       run: |
         echo "Current version is $CURRENT_VERSION"
         export NEW_VERSION=$(semver bump ${{ env.RELEASE }} $CURRENT_VERSION)
+        NEW_VERSION="v${NEW_VERSION}"
         echo "New version is $NEW_VERSION"
-        echo ::set-output name=new_version::"v$NEW_VERSION"
+        echo "new_version=$NEW_VERSION" >> $GITHUB_ENV
 
     - name: Get current date
       id: date
       shell: bash
-      run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+      run: |
+        CURRENT_DATE=$(date +'%Y-%m-%d')
+        echo "current_date=$CURRENT_DATE" >> $GITHUB_ENV
 
     - name: Update changelog
       id: update-changelog
       shell: bash
       env:
-        NEW_VERSION: "${{ steps.newtag.outputs.new_version }}"
-        VERSION_DATE: "${{ steps.date.outputs.date }}"
+        NEW_VERSION: "${{ env.new_version }}"
+        VERSION_DATE: "${{ env.current_date }}"
       run: |
         cd $GITHUB_WORKSPACE
         # Please select an user excluded in the branch protection rule
@@ -147,8 +152,8 @@ runs:
         # This token is provided by Actions, you don't need to create a new secret
         GITHUB_TOKEN: ${{ inputs.github-token }}
       with:
-        tag_name: ${{ steps.newtag.outputs.new_version }}
-        release_name: "Release ${{ steps.newtag.outputs.new_version }}"
+        tag_name: "${{ env.new_version }}"
+        release_name: "Release ${{ env.new_version }}"
         body: |
           See CHANGELOG.md file for details
         draft: false
@@ -168,11 +173,12 @@ runs:
       run: |
         ${{ inputs.docker-prebuild-commands }}
 
-        docker build -t $DOCKER_REPOSITORY:$NEW_VERSION \
+        docker build -t ${{ inputs.docker-repository }}:${{ env.new_version }} \
           ${{ inputs.docker-build-args }}
-          ${{ inputs.dockerfile-name }}
+          -f ${{ inputs.dockerfile-name }}
+          .
 
-        docker push $DOCKER_REPOSITORY:$NEW_VERSION
+        docker push ${{ inputs.docker-repository }}:${{ env.new_version }}
 
     # We checkout the repo using the PAT of the user that can skip the main branch protection rule. 
     # We persist these credentials so they are available in the next steps to make a commit against main branch directly.
