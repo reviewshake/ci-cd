@@ -6,6 +6,16 @@ File name should be action.yml or action.yaml
 
 For details see [this info](https://docs.github.com/en/actions/creating-actions/creating-a-composite-action)
 
+## Goal
+
+The purpose of this action is to standardize the Shake CI/CD pipelines avoiding code duplication and enforcing these features:
+
+* Include a branch protection rule to only allow merging of code to main via Pull Requests.
+* Force the approval of each Pull Request by at least one user in the CODEOWNERS file.
+* Automated update of CHANGELOG file based on the body of the Pull Request.
+* Automatically create a Release with the next semver version based on Pull Requests tags.
+* Scans reporitory to check if there are credentials stored as plain text.
+
 ## PERSONAL_ACCESS_TOKEN repo
 
 This action requires passing a variable named inputs.github-token.
@@ -22,3 +32,8 @@ Please set Expiration to Never.
 NOTE: For details see [this documentation](https://docs.github.com/en/developers/apps/building-oauth-apps/scopes-for-oauth-apps)
 
 Please store this token in 1password, in the `Infrastructure` vault, in the `shake-robot GitHub User Personal Access Token` login
+
+## Testing
+
+Please use the [ci-cd-test](https://github.com/reviewshake/ci-cd-test) repo to test modifications to this action.
+
