@@ -23,6 +23,19 @@ inputs:
     required: true
   argocd-values-file:
     description: 'ArgoCD Values File to update'
+    required: true
+  dockerfile-name:
+    description: 'Dockerfile name'
+    required: true
+    default: 'Dockerfile'
+  docker-prebuild-comands:
+    description: 'Commands to execute before docker build (like setting environment variables)'
+    required: false
+    default: ''
+  docker-build-args:
+    description: 'Docker build args to use during the docker build (eg: --build-arg VAR1=VALUE1 --build-arg VAR2=value2'
+    required: false
+    default: ''
 
 runs:
   using: "composite"
@@ -152,18 +165,13 @@ runs:
     # Build Docker Image
     - name: Build Docker Image
       shell: bash
-      env:
-        SECRET_KEY_BASE: ${{ secrets.SECRET_KEY_BASE }}
-        GITHUB_PACKAGE_TOKEN: ${{ secrets.GH_PACKAGE_TOKEN }}
-        NEW_VERSION: ${{ steps.newtag.outputs.new_version }}
       run: |
-        echo //npm.pkg.github.com/:_authToken=$GITHUB_PACKAGE_TOKEN >> .npmrc
+        ${{ inputs.docker-prebuild-commands }}
+
         docker build -t $DOCKER_REPOSITORY:$NEW_VERSION \
-          --build-arg GITHUB_SHA="$GITHUB_SHA" \
-          --build-arg GITHUB_REF="$GITHUB_REF" \
-          --build-arg SECRET_KEY_BASE=${{ secrets.SECRET_KEY_BASE }} \
-          --build-arg BUNDLE_GEMS__GRAPHQL__PRO=${{ secrets.BUNDLE_GEMS__GRAPHQL__PRO }} \
-          .
+          ${{ inputs.docker-build-args }}
+          ${{ inputs.dockerfile-name }}
+
         docker push $DOCKER_REPOSITORY:$NEW_VERSION
 
     # We checkout the repo using the PAT of the user that can skip the main branch protection rule. 
