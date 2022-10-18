@@ -79,7 +79,8 @@ runs:
     # Please run this action after the actions/checkout action
     - name: Check for plain credentials
       uses: ShiftLeftSecurity/scan-action@master
-      output: /tmp/reports
+      with:
+        output: /tmp/reports
 
     - name: 'Get Previous tag'
       if: ${{ inputs.app-env == 'production' }}
