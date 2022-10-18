@@ -28,7 +28,7 @@ inputs:
     description: 'Dockerfile name'
     required: true
     default: 'Dockerfile'
-  docker-prebuild-comands:
+  docker-prebuild-commands:
     description: 'Commands to execute before docker build (like setting environment variables)'
     required: false
     default: ''
