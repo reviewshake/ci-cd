@@ -268,7 +268,7 @@ runs:
       with:
         payload: |
           {
-            "message": "Build succeeded for ${{ inputs.app-name }} ${{ inputs.env-name }} :partyrocket:",
+            "message": "Build succeeded for ${{ inputs.app-name }} ${{ inputs.env-name }}, version is $NEW_VERSION :partyrocket:",
             "commit_url": "${{ github.event.head_commit.url }}",
             "job_status": "SUCCESS",
             "user": "${{ github.actor }}"
