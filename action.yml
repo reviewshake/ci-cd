@@ -265,11 +265,10 @@ runs:
       uses: slackapi/slack-github-action@v1.21.0
       env:
         SLACK_WEBHOOK_URL: ${{ inputs.slack-webhook-url }}
-        NEW_VERSION: "${{ env.new_version }}"
       with:
         payload: |
           {
-            "message": "Build succeeded for ${{ inputs.app-name }} ${{ inputs.app-env }}, version is $NEW_VERSION :partyrocket:",
+            "message": "Build succeeded for ${{ inputs.app-name }} ${{ inputs.app-env }}, version is ${{ env.new_version }} :partyrocket:",
             "commit_url": "${{ github.event.head_commit.url }}",
             "job_status": "SUCCESS",
             "user": "${{ github.actor }}"
