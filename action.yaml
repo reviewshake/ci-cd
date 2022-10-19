@@ -86,9 +86,9 @@ runs:
     - name: 'Get Previous tag'
       if: ${{ inputs.app-env == 'production' }}
       id: previoustag
-      uses: "WyriHaximus/github-action-get-previous-tag@v1"
+      uses: actions-ecosystem/action-get-latest-tag@v1
       with:
-        fallback: 1.0.0 # Optional fallback tag to use when no tag can be found
+        with_initial_version: v0.0.1
 
     - name: Install semver tool
       if: ${{ inputs.app-env == 'production' }}
