@@ -106,7 +106,7 @@ runs:
       if: ${{ inputs.forced-version }}
       shell: bash
       run: |
-        NEW_VERSION=${{ intputs.forced-version }}
+        NEW_VERSION=${{ inputs.forced-version }}
         echo "New version is $NEW_VERSION"
         echo "new_version=$NEW_VERSION" >> $GITHUB_ENV
 
