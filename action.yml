@@ -41,6 +41,10 @@ inputs:
     description: 'If provided, it sets this version (instead of trying to calculate the next version)'
     required: false
     default: ''
+  slack-webhook-url:
+    description: 'Slack Webhook URL to send notifications'
+    required: false
+    default: ''
 
 # NOTE: Don't use set-output, it's deprecated: https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
 #       Instead we use environment variables: https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#environment-files
@@ -48,6 +52,21 @@ runs:
   using: "composite"
 
   steps:
+    - name: Post start to Slack
+      if: ${{ inputs.slack-webhook-url }}
+      id: slack_start
+      uses: slackapi/slack-github-action@v1.21.0
+      env:
+        SLACK_WEBHOOK_URL: ${{ inputs.slack-webhook-url }}
+      with:
+        payload: |
+          {
+            "message": "Build started for ${{ inputs.app-name }} ${{ inputs.env-name }} :loading:",
+            "commit_url": "${{ github.event.head_commit.url }}",
+            "job_status": "STARTED",
+            "user": "${{ github.actor }}"
+          }
+
     - name: Set patch release
       shell: bash
       if: ${{ contains(github.event.*.labels.*.name, 'release-patch') }}
@@ -239,3 +258,33 @@ runs:
         git add ${{ inputs.argocd-values-file }}
         git commit -m "Upgrading ${{ inputs.app-name }} ${{ inputs.app-env }} to $NEW_VERSION"
         git push
+
+    - name: Post success to Slack
+      if: ${{ inputs.slack-webhook-url }}
+      id: slack_success
+      uses: slackapi/slack-github-action@v1.21.0
+      env:
+        SLACK_WEBHOOK_URL: ${{ inputs.slack-webhook-url }}
+      with:
+        payload: |
+          {
+            "message": "Build succeeded for ${{ inputs.app-name }} ${{ inputs.env-name }} :partyrocket:",
+            "commit_url": "${{ github.event.head_commit.url }}",
+            "job_status": "SUCCESS",
+            "user": "${{ github.actor }}"
+          }
+
+    - name: Post failure to Slack
+      if: ${{ inputs.slack-webhook-url && failure() }}
+      id: slack_failure
+      uses: slackapi/slack-github-action@v1.21.0
+      env:
+        SLACK_WEBHOOK_URL: ${{ inputs.slack-webhook-url }}
+      with:
+        payload: |
+          {
+            "message": "Build failed for ${{ inputs.app-name }} ${{ inputs.env-name }} :fail:",
+            "commit_url": "${{ github.event.head_commit.url }}",
+            "job_status": "FAILURE",
+            "user": "${{ github.actor }}"
+          }
