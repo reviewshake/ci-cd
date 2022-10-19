@@ -61,7 +61,7 @@ runs:
       with:
         payload: |
           {
-            "message": "Build started for ${{ inputs.app-name }} ${{ inputs.env-name }} :loading:",
+            "message": "Build started for ${{ inputs.app-name }} ${{ inputs.app-env }} :loading:",
             "commit_url": "${{ github.event.head_commit.url }}",
             "job_status": "STARTED",
             "user": "${{ github.actor }}"
@@ -265,10 +265,11 @@ runs:
       uses: slackapi/slack-github-action@v1.21.0
       env:
         SLACK_WEBHOOK_URL: ${{ inputs.slack-webhook-url }}
+        NEW_VERSION: "${{ env.new_version }}"
       with:
         payload: |
           {
-            "message": "Build succeeded for ${{ inputs.app-name }} ${{ inputs.env-name }}, version is $NEW_VERSION :partyrocket:",
+            "message": "Build succeeded for ${{ inputs.app-name }} ${{ inputs.app-env }}, version is $NEW_VERSION :partyrocket:",
             "commit_url": "${{ github.event.head_commit.url }}",
             "job_status": "SUCCESS",
             "user": "${{ github.actor }}"
@@ -283,7 +284,7 @@ runs:
       with:
         payload: |
           {
-            "message": "Build failed for ${{ inputs.app-name }} ${{ inputs.env-name }} :fail:",
+            "message": "Build failed for ${{ inputs.app-name }} ${{ inputs.app-env }} :fail:",
             "commit_url": "${{ github.event.head_commit.url }}",
             "job_status": "FAILURE",
             "user": "${{ github.actor }}"
