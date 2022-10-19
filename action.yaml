@@ -76,13 +76,13 @@ runs:
         token: ${{ inputs.github-token }}
         persist-credentials: true
         fetch-depth: 0 # Required due to the way Git works, without it this action won't be able to find any or the correct tags
-        path: ./source-repo/
+        path: /github/source-repo
 
     # Please run this action after the actions/checkout action
     - name: Check for plain credentials
       uses: ShiftLeftSecurity/scan-action@master
       with:
-        src: ./source-repo/
+        src: /github/source-repo
         output: /tmp/reports
 
     - name: 'Get Previous tag'
@@ -233,6 +233,6 @@ runs:
     # "Can't find 'action.yml', 'action.yaml' or 'Dockerfile' under '/home/runner/work/ci-cd-test/ci-cd-test/ci-cd'. Did you forget to run actions/checkout before running your local action?"
     # For details see https://github.com/actions/runner/issues/1300
     - name: Workaround for cleanup step
-      working-directory: ./source-repo/
+      working-directory: /github/source-repo
       run: ls .
       shell: bash
