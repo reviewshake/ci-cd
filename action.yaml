@@ -37,6 +37,10 @@ inputs:
     description: 'Docker build args to use during the docker build (eg: --build-arg VAR1=VALUE1 --build-arg VAR2=value2'
     required: false
     default: ''
+  forced-version:
+    description: 'If provided, it sets this version (instead of trying to calculate the next version)'
+    required: false
+    default: ''
 
 # NOTE: Don't use set-output, it's deprecated: https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
 #       Instead we use environment variables: https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#environment-files
@@ -88,7 +92,7 @@ runs:
       id: previoustag
       uses: actions-ecosystem/action-get-latest-tag@v1
       with:
-        with_initial_version: v0.0.1
+        initial_version: v0.0.1
 
     - name: Install semver tool
       if: ${{ inputs.app-env == 'production' }}
@@ -98,7 +102,16 @@ runs:
               https://raw.githubusercontent.com/fsaintjacques/semver-tool/master/src/semver
           chmod +x /usr/local/bin/semver
 
-    - name: Calculate next version
+    - name: Set forced version if provided
+      if: ${{ inputs.forced-version }}
+      shell: bash
+      run: |
+        NEW_VERSION=${{ intputs.forced-version }}
+        echo "New version is $NEW_VERSION"
+        echo "new_version=$NEW_VERSION" >> $GITHUB_ENV
+
+    - name: Calculate next version if no forced version was provided
+      if: ${{ ! inputs.forced-version }}
       id: newtag
       shell: bash
       run: |
