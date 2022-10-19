@@ -16,6 +16,14 @@ The purpose of this action is to standardize the Shake CI/CD pipelines avoiding 
 * Automatically create a Release with the next semver version based on Pull Requests tags.
 * Scans reporitory to check if there are credentials stored as plain text.
 
+## Repo Visibility
+
+This repository is *public*. However, it doesn't contain any credentials or sensitive info.
+
+If we set the repository to private, we'll need to checkout this repo on each client repo before using it. Also, the [post-run command will fail](https://stackoverflow.com/questions/69034292/how-do-you-use-a-composite-action-that-exists-in-a-private-repository)
+
+It's possible to set repositories as [Internal](https://dev.to/n3wt0n/finally-custom-github-actions-in-internal-repos-4l91) but this option is only available for Enterprise GitHub accounts.
+
 ## Client Repo Configuration
 
 Add the following labels to the client repo (the repo that uses this action):
@@ -42,6 +50,40 @@ Please set Expiration to Never.
 NOTE: For details see [this documentation](https://docs.github.com/en/developers/apps/building-oauth-apps/scopes-for-oauth-apps)
 
 Please store this token in 1password, in the `Infrastructure` vault, in the `shake-robot GitHub User Personal Access Token` login
+
+## Usage
+
+On a different repo create a file named (for example) `.github/workflows/ci-cd.yaml`
+
+```
+name: Semver Release
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+
+jobs:
+  ci-cd:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run CI/CD composite action
+        uses: reviewshake/ci-cd
+        with:
+          app-name: "semver app"
+          app-env: "production" # If we don't set production, no semver versions will be created
+          github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          docker-repository: "shakeventures/ci-cd-test"
+          docker-username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          docker-password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          argocd-repo-ssh-key: ${{ secrets.REPO_K8S_MANIFESTS_SSHKEY }}
+          argocd-values-file: "applications/app-name/values-prod.yaml"
+          docker-prebuild-commands: "echo //npm.pkg.github.com/:_authToken=${{ secrets.GH_PACKAGE_TOKEN }} >> .npmrc"
+          docker-build-args: "--build-arg GITHUB_SHA=$GITHUB_SHA --build-arg GITHUB_REF=$GITHUB_REF --build-arg SECRET_KEY_BASE=${{ secrets.SECRET_KEY_BASE }}"
+```
 
 ## Testing
 
