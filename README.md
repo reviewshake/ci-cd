@@ -71,7 +71,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run CI/CD composite action
-        uses: reviewshake/ci-cd
+        uses: reviewshake/ci-cd@main  # Alternative, use a specific tag
         with:
           app-name: "semver app"
           app-env: "production" # If we don't set production, no semver versions will be created
