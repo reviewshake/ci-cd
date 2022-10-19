@@ -231,6 +231,6 @@ runs:
     # "Can't find 'action.yml', 'action.yaml' or 'Dockerfile' under '/home/runner/work/ci-cd-test/ci-cd-test/ci-cd'. Did you forget to run actions/checkout before running your local action?"
     # For details see https://github.com/actions/runner/issues/1300
     - name: Workaround for cleanup step
-      working-directory: ../
+      working-directory: ../../
       run: ls .
       shell: bash
