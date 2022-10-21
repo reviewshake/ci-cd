@@ -56,33 +56,53 @@ Please store this token in 1password, in the `Infrastructure` vault, in the `sha
 On a different repo create a file named (for example) `.github/workflows/ci-cd.yaml`
 
 ```
-name: Semver Release
+name: deploy-production
 
 on:
   pull_request:
     branches:
-      - main
+      - master
     types:
       - closed
 
 jobs:
-  ci-cd:
+  # Reuse platform-ci (https://docs.github.com/en/actions/using-workflows/reusing-workflows)
+  ci:
+    name: platform-ci
+    uses: ./.github/workflows/platform-ci.yml
+    secrets: inherit
+
+  build:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+    needs: ci
     steps:
+      # Shake CI/CD Action
       - name: Run CI/CD composite action
-        uses: reviewshake/ci-cd@main  # Alternative, use a specific tag
+        uses: reviewshake/ci-cd@main
         with:
-          app-name: "semver app"
-          app-env: "production" # If we don't set production, no semver versions will be created
+          app-name: "reviewshake-app"
+          app-env: "production"
+          docker-repository: "shakeventures/reviewshake-app"
+          argocd-values-file: "applications/reviewshake-app/values-production.yaml"
+
           github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-          docker-repository: "shakeventures/ci-cd-test"
           docker-username: ${{ secrets.DOCKER_HUB_USERNAME }}
           docker-password: ${{ secrets.DOCKER_HUB_PASSWORD }}
           argocd-repo-ssh-key: ${{ secrets.REPO_K8S_MANIFESTS_SSHKEY }}
-          argocd-values-file: "applications/app-name/values-prod.yaml"
-          docker-prebuild-commands: "echo //npm.pkg.github.com/:_authToken=${{ secrets.GH_PACKAGE_TOKEN }} >> .npmrc"
-          docker-build-args: "--build-arg GITHUB_SHA=$GITHUB_SHA --build-arg GITHUB_REF=$GITHUB_REF --build-arg SECRET_KEY_BASE=${{ secrets.SECRET_KEY_BASE }}"
+          slack-webhook-url: '' # No slack webhook created for prod yet
+
+          docker-prebuild-commands: |
+            export SECRET_KEY_BASE=${{ secrets.SECRET_KEY_BASE }}
+            export GITHUB_PACKAGE_TOKEN=${{ secrets.GH_PACKAGE_TOKEN }}
+            echo //npm.pkg.github.com/:_authToken=${{ secrets.GH_PACKAGE_TOKEN }} >> .npmrc
+
+          docker-build-args: |
+            --build-arg GITHUB_SHA=$GITHUB_SHA \
+            --build-arg GITHUB_REF=$GITHUB_REF \
+            --build-arg SECRET_KEY_BASE=${{ secrets.SECRET_KEY_BASE }} \
+            --build-arg BUNDLE_GEMS__GRAPHQL__PRO=${{ secrets.BUNDLE_GEMS__GRAPHQL__PRO }} \
+            --build-arg BUNDLE_GEMS__CONTRIBSYS__COM=${{ secrets.BUNDLE_GEMS__CONTRIBSYS__COM }} \
 ```
 
 ## Testing
