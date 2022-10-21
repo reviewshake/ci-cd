@@ -220,9 +220,7 @@ runs:
       run: |
         ${{ inputs.docker-prebuild-commands }}
 
-        docker build -t ${{ inputs.docker-repository }}:${{ env.new_version }} \
-          ${{ inputs.docker-build-args }} \
-          -f ${{ inputs.dockerfile-name }} .
+        docker build -t ${{ inputs.docker-repository }}:${{ env.new_version }} ${{ inputs.docker-build-args }} -f ${{ inputs.dockerfile-name }} .
 
         docker push ${{ inputs.docker-repository }}:${{ env.new_version }}
 
