@@ -108,10 +108,13 @@ runs:
 
     - name: 'Get Previous tag'
       if: ${{ inputs.app-env == 'production' }}
-      id: previoustag
-      uses: actions-ecosystem/action-get-latest-tag@v1
-      with:
-        initial_version: v0.0.1
+      shell: bash
+      run: |
+          PREVIOUS_TAG=$(git tag --list 'v*.*.*' --sort=-version:refname | head -n 1)
+          if [ "$PREVIOUS_TAG" == "" ]; then
+               PREVIOUS_TAG="v0.0.0"
+          fi
+          echo "previous_tag=$PREVIOUS_TAG" >> $GITHUB_ENV
 
     - name: Install semver tool
       if: ${{ inputs.app-env == 'production' }}
@@ -136,7 +139,7 @@ runs:
       run: |
         if [ "${{ inputs.app-env }}" == "production" ]; then
           # For production versions, let's generate the next semver version
-          CURRENT_VERSION=${{ steps.previoustag.outputs.tag }}
+          CURRENT_VERSION=${{ env.previous_tag }}
           echo "Current version is $CURRENT_VERSION"
           NEW_VERSION=$(semver bump ${{ env.RELEASE }} $CURRENT_VERSION)
           NEW_VERSION="v${NEW_VERSION}"
