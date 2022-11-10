@@ -19,8 +19,11 @@ inputs:
     description: 'Docker Registry Password'
     required: true
   argocd-repo-ssh-key:
-    description: 'SSH Private Key allowed to clone the ArgoCD repo (k8s-manifests)'
+    description: 'SSH Private Key allowed to clone the ArgoCD repo'
     required: true
+  argocd-repo:
+    description: 'Git Repo storing ArgoCD manifests'
+    default: 'reviewshake/k8s-manifests'
   argocd-values-file:
     description: 'ArgoCD Values File to update (keep empty to skip the CD part)'
     required: false
@@ -231,13 +234,12 @@ runs:
     # We persist these credentials so they are available in the next steps to make a commit against main branch directly.
     - uses: actions/checkout@v3
       with:
-        repository: reviewshake/k8s-manifests
+        repository: ${{ inputs.argocd-repo }}
         ssh-key: ${{ inputs.argocd-repo-ssh-key }}
         ref: "main"
         token: ${{ inputs.github-token }}
         persist-credentials: true
         fetch-depth: 0 # Required due to the way Git works, without it this action won't be able to find any or the correct tags
-        # path: ./ci-cd/k8s-manifests/
 
     - name: Install yq
       shell: bash
