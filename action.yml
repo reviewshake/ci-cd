@@ -28,6 +28,10 @@ inputs:
     description: 'ArgoCD Values File to update (keep empty to skip the CD part)'
     required: false
     default: ''
+  dockerfile-directory:
+    description: 'Dockerfile directory'
+    required: true
+    default: '.'
   dockerfile-name:
     description: 'Dockerfile name'
     required: true
@@ -226,7 +230,7 @@ runs:
       run: |
         ${{ inputs.docker-prebuild-commands }}
 
-        docker build -t ${{ inputs.docker-repository }}:${{ env.new_version }} ${{ inputs.docker-build-args }} -f ${{ inputs.dockerfile-name }} .
+        docker build -t ${{ inputs.docker-repository }}:${{ env.new_version }} ${{ inputs.docker-build-args }} -f ${{ inputs.dockerfile-name }} ${{ inputs.dockerfile-directory }}
 
         docker push ${{ inputs.docker-repository }}:${{ env.new_version }}
 
