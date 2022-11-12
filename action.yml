@@ -187,22 +187,24 @@ runs:
         # The Pull Request body was populated with the content of pull_request_template.md (and edited)
         # Only extract the text below the line containing the word CHANGELOG
         echo "${{ github.event.pull_request.body }}" > pull-request-body.txt
-        CHANGELOG_LINE_NUMBER=$(grep -n "## CHANGELOG" pull-request-body.txt | cut -d ":" -f 1 | head -n 1 | tr -d "\n")
-        if [ "$CHANGELOG_LINE_NUMBER" == "" ]; then
+        if [ -s pull-request-body.txt ]; then
+          CHANGELOG_LINE_NUMBER=$(grep -n "## CHANGELOG" pull-request-body.txt | cut -d ":" -f 1 | head -n 1 | tr -d "\n")
+          if [ "$CHANGELOG_LINE_NUMBER" == "" ]; then
             echo "WARNING: No word CHANGELOG was found in PR body"
             exit 0
+          fi
+          FIRST_LINE_NUMBER=$((CHANGELOG_LINE_NUMBER+1))
+          CHANGELOG_BODY=`tail --lines=+${FIRST_LINE_NUMBER} pull-request-body.txt`
+          # Latest version should be injected on top of CHANGELOG (after header)
+          cat CHANGELOG.md | head -n 7 > CHANGELOG.new
+          echo "## [$NEW_VERSION] - $VERSION_DATE" >> CHANGELOG.new
+          echo "$CHANGELOG_BODY" >> CHANGELOG.new
+          tail --lines=+8 CHANGELOG.md >> CHANGELOG.new
+          mv CHANGELOG.new CHANGELOG.md
+          git add CHANGELOG.md
+          git commit -m "Updating CHANGELOG.md for $NEW_VERSION"
+          git push
         fi
-        FIRST_LINE_NUMBER=$((CHANGELOG_LINE_NUMBER+1))
-        CHANGELOG_BODY=`tail --lines=+${FIRST_LINE_NUMBER} pull-request-body.txt`
-        # Latest version should be injected on top of CHANGELOG (after header)
-        cat CHANGELOG.md | head -n 7 > CHANGELOG.new
-        echo "## [$NEW_VERSION] - $VERSION_DATE" >> CHANGELOG.new
-        echo "$CHANGELOG_BODY" >> CHANGELOG.new
-        tail --lines=+8 CHANGELOG.md >> CHANGELOG.new
-        mv CHANGELOG.new CHANGELOG.md
-        git add CHANGELOG.md
-        git commit -m "Updating CHANGELOG.md for $NEW_VERSION"
-        git push
 
     # Create a new GitHub Release
     - name: Create new GitHub release
