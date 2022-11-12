@@ -189,8 +189,8 @@ runs:
         echo "${{ github.event.pull_request.body }}" > pull-request-body.txt
         CHANGELOG_LINE_NUMBER=$(grep -n "## CHANGELOG" pull-request-body.txt | cut -d ":" -f 1 | head -n 1 | tr -d "\n")
         if [ "$CHANGELOG_LINE_NUMBER" == "" ]; then
-            echo "ERROR: No word CHANGELOG was found in PR body"
-            exit 1
+            echo "WARNING: No word CHANGELOG was found in PR body"
+            exit 0
         fi
         FIRST_LINE_NUMBER=$((CHANGELOG_LINE_NUMBER+1))
         CHANGELOG_BODY=`tail --lines=+${FIRST_LINE_NUMBER} pull-request-body.txt`
