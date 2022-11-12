@@ -28,6 +28,10 @@ inputs:
     description: 'ArgoCD Values File to update (keep empty to skip the CD part)'
     required: false
     default: ''
+  argocd-image-tag:
+    description: 'ArgoCD Values File yaml path to key containing the docker image tag to update'
+    required: true
+    default: '.image.tag'
   code-directory:
     description: 'Code directory'
     required: true
@@ -257,7 +261,7 @@ runs:
       env:
         NEW_VERSION: "${{ env.new_version }}"
       run: |
-        yq eval -i ".image.tag = \"$NEW_VERSION\"" ${{ inputs.argocd-values-file }}
+        yq eval -i "${{ inputs.argocd-image-tag }} = \"$NEW_VERSION\"" ${{ inputs.argocd-values-file }}
         head ${{ inputs.argocd-values-file }}
 
         git config user.name shake-robot
